@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -214,6 +213,8 @@ const QuestionDetail = () => {
         {/* Question Content */}
         <div className="flex gap-6">
           <VotingButtons
+            targetId={mockQuestion.id}
+            targetType="question"
             initialVotes={mockQuestion.votes}
             size="lg"
           />
@@ -280,6 +281,8 @@ const QuestionDetail = () => {
           <div key={answer.id} className="bg-white rounded-lg border p-6">
             <div className="flex gap-6">
               <VotingButtons
+                targetId={answer.id}
+                targetType="answer"
                 initialVotes={answer.votes}
                 size="lg"
               />

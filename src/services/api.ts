@@ -1,4 +1,3 @@
-
 import { 
   User, 
   Question, 
@@ -68,9 +67,17 @@ class ApiService {
   }
 
   async logout(): Promise<ApiResponse<void>> {
-    const result = await this.makeRequest('/auth/logout', { method: 'POST' });
-    localStorage.removeItem('auth_token');
-    return result;
+    try {
+      await this.makeRequest('/auth/logout', { method: 'POST' });
+      localStorage.removeItem('auth_token');
+      return { success: true };
+    } catch (error) {
+      localStorage.removeItem('auth_token');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Logout failed'
+      };
+    }
   }
 
   // Questions
