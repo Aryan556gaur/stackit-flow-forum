@@ -1,21 +1,10 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
-import { 
-  Eye, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  MessageSquare, 
-  Edit, 
-  Flag,
-  Share2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import VotingButtons from '@/components/VotingButtons';
-import RichTextEditor from '@/components/RichTextEditor';
+
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import QuestionHeader from '@/components/QuestionHeader';
+import QuestionContent from '@/components/QuestionContent';
+import AnswerCard from '@/components/AnswerCard';
+import AnswerForm from '@/components/AnswerForm';
 
 // Mock data - in a real app, this would come from an API
 const mockQuestion = {
@@ -159,113 +148,26 @@ This approach actually cancels the HTTP request when the component unmounts, whi
 
 const QuestionDetail = () => {
   const { id } = useParams();
-  const [newAnswer, setNewAnswer] = useState('');
-  const [isAnswering, setIsAnswering] = useState(false);
-
-  const handleSubmitAnswer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newAnswer.trim()) {
-      // Here you would submit the answer to your backend
-      console.log('Submitting answer:', newAnswer);
-      setNewAnswer('');
-      setIsAnswering(false);
-    }
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Question */}
       <div className="bg-white rounded-lg border p-6">
-        {/* Question Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {mockQuestion.title}
-          </h1>
-          
-          <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-            <span className="flex items-center">
-              <Eye className="w-4 h-4 mr-1" />
-              {mockQuestion.views} views
-            </span>
-            <span className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              Asked {formatDistanceToNow(mockQuestion.createdAt, { addSuffix: true })}
-            </span>
-            <span className="flex items-center">
-              <Edit className="w-4 h-4 mr-1" />
-              Modified {formatDistanceToNow(mockQuestion.updatedAt, { addSuffix: true })}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {mockQuestion.tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        {/* Question Content */}
-        <div className="flex gap-6">
-          <VotingButtons
-            targetId={mockQuestion.id}
-            targetType="question"
-            initialVotes={mockQuestion.votes}
-            size="lg"
-          />
-          
-          <div className="flex-1">
-            <div className="prose max-w-none mb-6">
-              <div className="whitespace-pre-wrap">{mockQuestion.description}</div>
-            </div>
-            
-            {/* Question Actions */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  <Share2 className="w-4 h-4 mr-1" />
-                  Share
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Flag className="w-4 h-4 mr-1" />
-                  Flag
-                </Button>
-              </div>
-              
-              {/* Author Info */}
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="text-xs text-gray-600 mb-1">
-                  asked {formatDistanceToNow(mockQuestion.createdAt, { addSuffix: true })}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <Link 
-                      to={`/users/${mockQuestion.author.name}`}
-                      className="font-medium text-orange-600 hover:text-orange-700"
-                    >
-                      {mockQuestion.author.name}
-                    </Link>
-                    <div className="text-xs text-gray-600">
-                      {mockQuestion.author.reputation} reputation
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <QuestionHeader
+          title={mockQuestion.title}
+          views={mockQuestion.views}
+          createdAt={mockQuestion.createdAt}
+          updatedAt={mockQuestion.updatedAt}
+          tags={mockQuestion.tags}
+        />
+        
+        <QuestionContent
+          id={mockQuestion.id}
+          description={mockQuestion.description}
+          author={mockQuestion.author}
+          votes={mockQuestion.votes}
+          createdAt={mockQuestion.createdAt}
+        />
       </div>
 
       {/* Answers Header */}
@@ -278,115 +180,12 @@ const QuestionDetail = () => {
       {/* Answers */}
       <div className="space-y-6">
         {mockAnswers.map((answer) => (
-          <div key={answer.id} className="bg-white rounded-lg border p-6">
-            <div className="flex gap-6">
-              <VotingButtons
-                targetId={answer.id}
-                targetType="answer"
-                initialVotes={answer.votes}
-                size="lg"
-              />
-              
-              <div className="flex-1">
-                {answer.isAccepted && (
-                  <div className="flex items-center mb-4 text-green-600">
-                    <CheckCircle className="w-5 h-5 mr-2 fill-current" />
-                    <span className="font-medium">Accepted Answer</span>
-                  </div>
-                )}
-                
-                <div className="prose max-w-none mb-6">
-                  <div className="whitespace-pre-wrap">{answer.content}</div>
-                </div>
-                
-                {/* Answer Actions */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
-                      <Share2 className="w-4 h-4 mr-1" />
-                      Share
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Flag className="w-4 h-4 mr-1" />
-                      Flag
-                    </Button>
-                  </div>
-                  
-                  {/* Answer Author */}
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="text-xs text-gray-600 mb-1">
-                      answered {formatDistanceToNow(answer.createdAt, { addSuffix: true })}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <Link 
-                          to={`/users/${answer.author.name}`}
-                          className="font-medium text-orange-600 hover:text-orange-700"
-                        >
-                          {answer.author.name}
-                        </Link>
-                        <div className="text-xs text-gray-600">
-                          {answer.author.reputation} reputation
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AnswerCard key={answer.id} answer={answer} />
         ))}
       </div>
 
       {/* Add Answer */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Your Answer</h3>
-        
-        {!isAnswering ? (
-          <Button 
-            onClick={() => setIsAnswering(true)}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            Write an Answer
-          </Button>
-        ) : (
-          <form onSubmit={handleSubmitAnswer} className="space-y-4">
-            <RichTextEditor
-              value={newAnswer}
-              onChange={setNewAnswer}
-              placeholder="Write your answer here..."
-              minHeight="200px"
-            />
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                type="submit"
-                className="bg-orange-600 hover:bg-orange-700"
-                disabled={!newAnswer.trim()}
-              >
-                Post Your Answer
-              </Button>
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAnswering(false);
-                  setNewAnswer('');
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
-      </div>
+      <AnswerForm />
     </div>
   );
 };
