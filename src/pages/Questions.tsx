@@ -1,53 +1,101 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Filter, SortAsc, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import QuestionCard from '@/components/QuestionCard';
-import { apiService } from '@/services/api';
-import { Question } from '@/types/database';
+
+// Mock data
+const mockQuestions = [
+  {
+    id: 1,
+    title: "How to handle async/await in React useEffect hook?",
+    excerpt: "I'm trying to fetch data in a useEffect hook using async/await, but I'm getting warnings about memory leaks. What's the proper way to handle this?",
+    author: { name: "john_doe", reputation: 1250 },
+    votes: 15,
+    answers: 3,
+    views: 142,
+    tags: ["react", "javascript", "async-await", "useeffect"],
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    hasAcceptedAnswer: true
+  },
+  {
+    id: 2,
+    title: "Best practices for TypeScript with React components",
+    excerpt: "I'm new to TypeScript and want to know the best practices for typing React components, props, and state. Should I use interfaces or types?",
+    author: { name: "sarah_dev", reputation: 892 },
+    votes: 8,
+    answers: 2,
+    views: 89,
+    tags: ["typescript", "react", "best-practices"],
+    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+  },
+  {
+    id: 3,
+    title: "Why is my CSS Grid layout not working on mobile devices?",
+    excerpt: "I have a CSS Grid layout that works perfectly on desktop but breaks on mobile. The grid items are overlapping and the responsive design isn't working as expected.",
+    author: { name: "mike_css", reputation: 634 },
+    votes: 12,
+    answers: 5,
+    views: 203,
+    tags: ["css", "css-grid", "responsive-design", "mobile"],
+    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+    hasAcceptedAnswer: false
+  },
+  {
+    id: 4,
+    title: "Node.js Express middleware execution order",
+    excerpt: "I'm confused about the order in which Express middleware functions are executed. Can someone explain the middleware stack and how next() works?",
+    author: { name: "backend_guru", reputation: 2156 },
+    votes: 22,
+    answers: 7,
+    views: 318,
+    tags: ["nodejs", "express", "middleware"],
+    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+    hasAcceptedAnswer: true
+  },
+  {
+    id: 5,
+    title: "How to optimize React app performance?",
+    excerpt: "My React application is becoming slow with large datasets. What are the best practices for optimizing performance? Should I use React.memo, useMemo, or useCallback?",
+    author: { name: "performance_dev", reputation: 1789 },
+    votes: 31,
+    answers: 9,
+    views: 456,
+    tags: ["react", "performance", "optimization", "react-memo"],
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+    hasAcceptedAnswer: true
+  }
+];
 
 const Questions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: questionsResponse, isLoading, error } = useQuery({
-    queryKey: ['questions', currentPage, sortBy, searchTerm],
-    queryFn: () => apiService.getQuestions({
-      page: currentPage,
-      limit: 10,
-      sort: sortBy,
-      search: searchTerm || undefined,
-    }),
-  });
+  const filteredQuestions = mockQuestions.filter(question =>
+    question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    question.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    question.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const questions = questionsResponse?.data?.data || [];
-  const pagination = questionsResponse?.data?.pagination;
-
-  const filteredQuestions = questions.filter((question: Question) => {
-    switch (filterBy) {
-      case 'unanswered':
-        return question.answers === 0;
-      case 'answered':
-        return question.answers > 0;
-      case 'accepted':
-        return question.has_accepted_answer;
+  const sortedQuestions = [...filteredQuestions].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      case 'oldest':
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      case 'votes':
+        return b.votes - a.votes;
+      case 'answers':
+        return b.answers - a.answers;
+      case 'views':
+        return b.views - a.views;
       default:
-        return true;
+        return 0;
     }
   });
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500 text-lg">Failed to load questions. Please try again later.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -55,9 +103,7 @@ const Questions = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">All Questions</h1>
-          <p className="mt-1 text-gray-600">
-            {isLoading ? 'Loading...' : `${pagination?.total || 0} questions`}
-          </p>
+          <p className="mt-1 text-gray-600">{mockQuestions.length} questions</p>
         </div>
         
         <Button asChild className="bg-orange-600 hover:bg-orange-700">
@@ -110,39 +156,10 @@ const Questions = () => {
 
       {/* Questions List */}
       <div className="space-y-4">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Loading questions...</p>
-          </div>
-        ) : filteredQuestions.length > 0 ? (
-          <>
-            {filteredQuestions.map((question: Question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
-            
-            {/* Pagination */}
-            {pagination && pagination.total_pages > 1 && (
-              <div className="flex justify-center items-center space-x-4 pt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {pagination.total_pages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.min(pagination.total_pages, prev + 1))}
-                  disabled={currentPage === pagination.total_pages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
+        {sortedQuestions.length > 0 ? (
+          sortedQuestions.map((question) => (
+            <QuestionCard key={question.id} question={question} />
+          ))
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No questions found matching your search.</p>
