@@ -4,23 +4,7 @@ import { Link } from 'react-router-dom';
 import { ChevronUp, ChevronDown, MessageSquare, Eye, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-
-interface Question {
-  id: number;
-  title: string;
-  excerpt: string;
-  author: {
-    name: string;
-    avatar?: string;
-    reputation: number;
-  };
-  votes: number;
-  answers: number;
-  views: number;
-  tags: string[];
-  createdAt: Date;
-  hasAcceptedAnswer?: boolean;
-}
+import { Question } from '@/types/database';
 
 interface QuestionCardProps {
   question: Question;
@@ -37,8 +21,8 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
             <span>votes</span>
           </div>
           
-          <div className={`flex flex-col items-center ${question.hasAcceptedAnswer ? 'text-green-600' : ''}`}>
-            <span className={`font-medium ${question.hasAcceptedAnswer ? 'text-green-700' : 'text-gray-900'}`}>
+          <div className={`flex flex-col items-center ${question.has_accepted_answer ? 'text-green-600' : ''}`}>
+            <span className={`font-medium ${question.has_accepted_answer ? 'text-green-700' : 'text-gray-900'}`}>
               {question.answers}
             </span>
             <span>answers</span>
@@ -91,14 +75,14 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
             <div className="flex items-center space-x-2">
               <span className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
-                {formatDistanceToNow(question.createdAt, { addSuffix: true })}
+                {formatDistanceToNow(new Date(question.created_at), { addSuffix: true })}
               </span>
               <span>by</span>
               <Link 
-                to={`/users/${question.author.name}`}
+                to={`/users/${question.author.id}`}
                 className="font-medium text-orange-600 hover:text-orange-700"
               >
-                {question.author.name}
+                {question.author.username}
               </Link>
               <span className="text-gray-400">({question.author.reputation})</span>
             </div>

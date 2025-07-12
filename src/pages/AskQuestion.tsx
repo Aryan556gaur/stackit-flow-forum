@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,15 +7,32 @@ import { Card } from '@/components/ui/card';
 import RichTextEditor from '@/components/RichTextEditor';
 import TagInput from '@/components/TagInput';
 import { AlertCircle, HelpCircle } from 'lucide-react';
+import { apiService } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const AskQuestion = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     tags: [] as string[]
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to ask a question",
+        variant: "destructive",
+      });
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate, toast]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -41,17 +57,47 @@ const AskQuestion = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // Here you would normally submit to your backend
-      console.log('Submitting question:', formData);
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const response = await apiService.createQuestion({
+        title: formData.title,
+        content: formData.description,
+        tags: formData.tags,
+      });
       
-      // Simulate success and redirect
-      navigate('/');
+      if (response.success && response.data) {
+        toast({
+          title: "Question posted!",
+          description: "Your question has been posted successfully.",
+        });
+        navigate(`/questions/${response.data.id}`);
+      } else {
+        toast({
+          title: "Failed to post question",
+          description: response.error || "An error occurred while posting your question",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -155,6 +201,7 @@ const AskQuestion = () => {
             type="button" 
             variant="outline" 
             onClick={() => navigate('/')}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
@@ -162,8 +209,9 @@ const AskQuestion = () => {
           <Button 
             type="submit"
             className="bg-orange-600 hover:bg-orange-700"
+            disabled={isSubmitting}
           >
-            Post Your Question
+            {isSubmitting ? 'Posting...' : 'Post Your Question'}
           </Button>
         </div>
       </form>
